@@ -1,0 +1,148 @@
+﻿@page "/homepage"
+@rendermode InteractiveServer
+
+<h3>Homepage</h3>
+
+<div class="homepage-container" style="display:flex;gap:32px;">
+    <!-- News Sidebar -->
+    <div class="news-sidebar" style="width:340px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h4>News</h4>
+            <a href="#">Xem tất cả</a>
+        </div>
+        <div class="news-list" style="margin-top:16px;">
+            @* Mẫu tin tức *@
+            <div class="news-item" style="background:linear-gradient(90deg,#6a11cb,#2575fc);color:#fff;border-radius:12px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:12px;">18/07/2025</div>
+                <div style="font-weight:bold;">FORM KHẢO SÁT MỨC ĐỘ HẠNH PHÚC CỦA NHÂN VIÊN</div>
+                <div style="font-size:12px;">Deadline: 23h59 20/7/2025</div>
+                <span style="background:#2ecc71;color:#fff;padding:2px 8px;border-radius:8px;font-size:12px;">Hoạt động nội bộ</span>
+            </div>
+            <div class="news-item" style="background:linear-gradient(90deg,#6a11cb,#2575fc);color:#fff;border-radius:12px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:12px;">16/06/2025</div>
+                <div style="font-weight:bold;">TÀI KHOẢN CHATGPT PLUS CỦA CÔNG TY</div>
+                <span style="background:#9b59b6;color:#fff;padding:2px 8px;border-radius:8px;font-size:12px;">Cẩm nang</span>
+            </div>
+            @* Thêm các tin khác nếu muốn *@
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" style="flex:1;">
+        <div style="font-size:20px;font-weight:bold;margin-bottom:8px;">
+            Chúc Quý một ngày làm việc hiệu quả! 👋
+        </div>
+        <div style="font-style:italic;text-align:right;color:#555;margin-bottom:24px;">
+            "Hãy làm việc bằng chính tình yêu và lòng đam mê nghề, để mỗi ngày chúng ta cùng rong chơi với nó, chứ không phải 'đi làm'!"<br />
+            <span style="font-size:13px;">- Sưu Tầm</span>
+        </div>
+
+        <div>
+            <h5>Ứng dụng yêu thích</h5>
+            <div style="display:flex;gap:24px;margin-bottom:32px;">
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">📝</span>
+                    </button>
+                    <div>Todolist</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h5>Công việc</h5>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">📝</span>
+                    </button>
+                    <div>Todolist</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">📋</span>
+                    </button>
+                    <div>Quy trình</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">🗂️</span>
+                    </button>
+                    <div>Kế hoạch</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">👤</span>
+                    </button>
+                    <div>Quản lý họp</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:16px 20px;" @onclick="GotoOkrs">
+                        <span style="font-size:28px;">🎯</span>
+                    </button>
+                    <div style="font-weight:bold;color:#faad14;">OKRs</div>
+                </div>
+                @* Thêm các nút khác tương tự *@
+            </div>
+        </div>
+
+        <div style="margin-top:32px;">
+            <h5>Hỗ trợ</h5>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#f0f5ff;border:1px solid #adc6ff;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">📖</span>
+                    </button>
+                    <div>Tin tức</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#f0f5ff;border:1px solid #adc6ff;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">✉️</span>
+                    </button>
+                    <div>Mail</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#f0f5ff;border:1px solid #adc6ff;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">⭐</span>
+                    </button>
+                    <div>Ghi nhận</div>
+                </div>
+                @* Thêm các nút khác tương tự *@
+            </div>
+        </div>
+
+        <div style="margin-top:32px;">
+            <h5>Tiện ích</h5>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#f6ffed;border:1px solid #b7eb8f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">📊</span>
+                    </button>
+                    <div>Thống kê</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#f6ffed;border:1px solid #b7eb8f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">🏢</span>
+                    </button>
+                    <div>Phòng ban</div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="app-btn" style="background:#f6ffed;border:1px solid #b7eb8f;border-radius:12px;padding:16px 20px;">
+                        <span style="font-size:28px;">🏆</span>
+                    </button>
+                    <div>Thành tựu</div>
+                </div>
+                @* Thêm các nút khác tương tự *@
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private void GotoOkrs()
+    {
+        Nav.NavigateTo("/okrs");
+    }
+}

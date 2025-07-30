@@ -1,0 +1,40 @@
+﻿@page "/login"
+@inject NavigationManager Nav
+@inject IConfiguration Config
+@rendermode InteractiveServer
+
+<h3 class="text-xl font-bold mb-4">Đăng nhập</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+  <div class="text-red-500 mb-2">@errorMessage</div>
+}
+
+<div class="space-y-2">
+  <input placeholder="Email" class="border p-2 w-full" @bind="email" />
+  <input placeholder="Password" class="border p-2 w-full" type="password" @bind="password" />
+  <button @onclick="HandleLogin" class="btn btn-primary">Đăng nhập</button>
+</div>
+
+
+@code {
+  private string email = "";
+  private string password = "";
+  private string errorMessage = "";
+
+  private async Task HandleLogin()
+  {       
+    var repo = new FastdoServer.Infrastructure.Data.Main.MainUserRepo(Config);
+    var user = await repo.LoginAsync(email, password);
+    if (user != null)
+    {
+        Nav.NavigateTo("/homepage");
+    }
+    else
+    {
+        errorMessage = "Đăng nhập thất bại. Sai thông tin!";
+    }
+  }
+}
+
+

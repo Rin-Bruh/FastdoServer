@@ -1,0 +1,117 @@
+﻿@page "/okrs"
+@using FastdoServer.Core.Entities
+@using FastdoServer.Infrastructure.Data.Okr
+@inject OkrRepo OkrRepo
+@rendermode InteractiveServer
+
+<div class="okr-list-container" style="padding:24px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2 style="font-weight:600;color:#6c757d;">OKRS - CÁ NHÂN</h2>
+    <button class="btn btn-outline-primary" style="padding:8px 20px;border-radius:8px;">
+        + Thêm OKRs
+    </button>
+  </div>
+
+  <div style="background:#fff;border-radius:12px;padding:0;margin-top:20px;box-shadow:0 1px 4px #0001;">
+    <table class="table" style="margin-bottom:0;">
+      <thead>
+        <tr style="background:#fafafa;">
+          <th style="min-width:180px;">Mục tiêu</th>
+          <th style="min-width:160px;">Kết Quả Then Chốt</th>
+          <th style="min-width:120px;">Thực đạt</th>
+          <th style="min-width:100px;">Tiến độ</th>
+          <th style="min-width:100px;">Thay đổi</th>
+          <th style="min-width:120px;">Ngày tạo</th>
+          </tr>
+      </thead>
+      <tbody>
+        @if (okrs != null && okrs.Count > 0)
+        {
+          @foreach (var okr in okrs)
+          {
+            <tr style="font-weight:600;">
+              <td>
+                <span style="color:#2d3a4a;">@okr.name</span>
+              </td>
+              <td>
+                @if (okr.key_results != null)
+                {
+                  <span style="color:#1d39c4;">@okr.key_results.Count kết quả</span>
+                  <span style="margin-left:4px;">&#9654;</span>
+                }
+                else
+                {
+                   <span>0 kết quả</span>
+                }
+              </td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>@FormatDate(okr.date_create)</td>
+            </tr>
+            @if (okr.key_results != null)
+            {
+              @foreach (var kr in okr.key_results)
+              {
+                <tr style="background:#fcfcfc;">
+                <td style="padding-left:32px;font-weight:400;">
+                    @kr.name
+                </td>
+                <td></td>
+                <td>
+                  <span style="color:#52c41a;">
+                    @kr.result / @kr.target @kr.unit
+                  </span>
+                </td>
+                <td>
+                  <span>0%</span>
+                </td>
+                <td>
+                  <span>0%</span>
+                </td>
+                <td></td>
+                </tr>
+              }
+            }
+          }
+        }
+        else
+        {
+          <tr>
+            <td colspan="6" class="text-center">Không có OKRs nào</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:32px;">
+    <h4 style="color:#6c757d;">TIẾN ĐỘ OKRS</h4>
+    <div style="background:#fff;border-radius:12px;min-height:200px;box-shadow:0 1px 4px #0001;"></div>
+  </div>
+</div>
+
+@code {
+  private List<OkrModel> okrs = new();
+  private string companyId = "238I941CA4";
+  private string cycle = "237O0AA519";
+  private string user = "22AP43782C";
+
+  protected override async Task OnInitializedAsync()
+  {
+    okrs = await OkrRepo.GetList(companyId, cycle, user);
+  }
+
+  private string FormatDate(long ticks)
+  {
+    try
+    {
+      var date = new DateTime(ticks);
+      return date.ToString("dd/MM/yyyy");
+    }
+    catch
+    {
+        return "";
+    }
+  }
+}
