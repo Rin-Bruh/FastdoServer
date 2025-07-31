@@ -1,6 +1,9 @@
 ﻿@page "/login"
 @inject NavigationManager Nav
 @inject IConfiguration Config
+@inject ProtectedSessionStorage SessionStorage
+@using FastdoServer.Infrastructure.Data.Main
+@inject MainUserRepo UserRepo
 @rendermode InteractiveServer
 
 <h3 class="text-xl font-bold mb-4">Đăng nhập</h3>
@@ -24,17 +27,15 @@
 
   private async Task HandleLogin()
   {       
-    var repo = new FastdoServer.Infrastructure.Data.Main.MainUserRepo(Config);
-    var user = await repo.LoginAsync(email, password);
+    var user = await UserRepo.LoginAsync(email, password);
     if (user != null)
     {
-        Nav.NavigateTo("/homepage");
+      await SessionStorage.SetAsync("user", user);
+      Nav.NavigateTo("/homepage");
     }
     else
     {
-        errorMessage = "Đăng nhập thất bại. Sai thông tin!";
+      errorMessage = "Đăng nhập thất bại. Sai thông tin!";
     }
   }
 }
-
-

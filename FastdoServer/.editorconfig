@@ -1,0 +1,31 @@
+# EditorConfig giúp duy trì phong cách mã hóa nhất quán cho nhiều IDE và trình soạn thảo.
+
+# Dành cho tất cả file
+root = true
+
+# Thiết lập mặc định
+[*]
+indent_style = space
+indent_size = 2
+tab_width = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Dành riêng cho file C# (dạng cs)
+[*.cs]
+indent_style = space
+indent_size = 2
+dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+
+# Dành riêng cho file JSON (dạng json)
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Dành riêng cho file Markdown (dạng md)
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2

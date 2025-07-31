@@ -2,14 +2,38 @@
 @using FastdoServer.Core.Entities
 @using FastdoServer.Infrastructure.Data.Okr
 @inject OkrRepo OkrRepo
+@inject OkrConfigRepo OkrConfigRepo
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager Nav
 @rendermode InteractiveServer
+@attribute [StreamRendering]
 
 <div class="okr-list-container" style="padding:24px;">
-  <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h2 style="font-weight:600;color:#6c757d;">OKRS - CÁ NHÂN</h2>
-    <button class="btn btn-outline-primary" style="padding:8px 20px;border-radius:8px;">
-        + Thêm OKRs
-    </button>
+  <div style="display:flex;justify-content:space-between;align-items:center; flex-wrap: wrap; gap: 16px;">
+    <h2 style="font-weight:600;color:#6c757d; margin-bottom: 0;">OKRS - CÁ NHÂN</h2>
+    <div style="display:flex; align-items:center; gap: 16px; flex-wrap: wrap;">
+      @if (currentUser?.companys is not null && currentUser.companys.Any())
+      {
+        <select class="form-select" style="width: 200px;" @onchange="OnCompanyChanged">
+          @foreach (var company in currentUser.companys)
+          {
+            <option value="@company.id" selected="@(company.id == selectedCompanyId)">@company.name</option>
+          }
+        </select>
+      }
+      <select class="form-select" style="width: 150px;" @onchange="OnCycleChanged">
+        @if (availableCycles.Any())
+        {
+          @foreach (var cycle in availableCycles)
+          {
+            <option value="@cycle.id" selected="@(cycle.id == selectedCycleId)">@cycle.name</option>
+          }
+        }
+      </select>
+      <button class="btn btn-outline-primary" style="padding:8px 20px;border-radius:8px;">
+          + Thêm OKRs
+      </button>
+    </div>
   </div>
 
   <div style="background:#fff;border-radius:12px;padding:0;margin-top:20px;box-shadow:0 1px 4px #0001;">
@@ -22,7 +46,7 @@
           <th style="min-width:100px;">Tiến độ</th>
           <th style="min-width:100px;">Thay đổi</th>
           <th style="min-width:120px;">Ngày tạo</th>
-          </tr>
+        </tr>
       </thead>
       <tbody>
         @if (okrs != null && okrs.Count > 0)
@@ -41,9 +65,9 @@
                 }
                 else
                 {
-                   <span>0 kết quả</span>
+                  <span>0 kết quả</span>
                 }
-              </td>
+                </td>
               <td></td>
               <td></td>
               <td></td>
@@ -55,7 +79,7 @@
               {
                 <tr style="background:#fcfcfc;">
                 <td style="padding-left:32px;font-weight:400;">
-                    @kr.name
+                  @kr.name
                 </td>
                 <td></td>
                 <td>
@@ -78,28 +102,91 @@
         else
         {
           <tr>
-            <td colspan="6" class="text-center">Không có OKRs nào</td>
+            <td colspan="6" class="text-center p-4">
+              @if(currentUser is null) {
+                <span>Đang tải dữ liệu...</span>
+              } else {
+                <span>Không có OKRs nào.</span>
+              }
+            </td>
           </tr>
         }
       </tbody>
     </table>
   </div>
-
-  <div style="margin-top:32px;">
-    <h4 style="color:#6c757d;">TIẾN ĐỘ OKRS</h4>
-    <div style="background:#fff;border-radius:12px;min-height:200px;box-shadow:0 1px 4px #0001;"></div>
-  </div>
 </div>
 
 @code {
   private List<OkrModel> okrs = new();
-  private string companyId = "238I941CA4";
-  private string cycle = "237O0AA519";
-  private string user = "22AP43782C";
+  private UserModel? currentUser;
+  private string? selectedCompanyId;
+  private string? selectedCycleId;
 
-  protected override async Task OnInitializedAsync()
+  private List<OkrConfigModel.Cycle> availableCycles = new();
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
   {
-    okrs = await OkrRepo.GetList(companyId, cycle, user);
+    if (firstRender)
+    {
+      var userResult = await SessionStorage.GetAsync<UserModel>("user");
+      if (userResult.Success && userResult.Value != null)
+      {
+        currentUser = userResult.Value;
+
+        selectedCompanyId = currentUser.companys?.FirstOrDefault()?.id;        
+        if (!string.IsNullOrEmpty(selectedCompanyId))
+        {
+          await LoadCyclesAsync(selectedCompanyId);
+          await LoadOkrsAsync();
+        }
+        StateHasChanged();
+      }
+      else
+      {
+        Nav.NavigateTo("/login");
+      }
+    }
+  }
+
+  private async Task OnCompanyChanged(ChangeEventArgs e)
+  {
+    selectedCompanyId = e.Value?.ToString();
+    await LoadCyclesAsync(selectedCompanyId);
+    await LoadOkrsAsync();
+  }
+
+  private async Task OnCycleChanged(ChangeEventArgs e)
+  {
+    selectedCycleId = e.Value?.ToString();
+    await LoadOkrsAsync();
+  }
+
+  private async Task LoadCyclesAsync(string? companyId)
+  {
+    if (string.IsNullOrEmpty(companyId))
+    {
+      return;
+    }
+
+    availableCycles.Clear();
+    var config = await OkrConfigRepo.Get(companyId);
+    if (config?.cycles is not null)
+    {      
+      availableCycles = config.cycles;
+      selectedCycleId = availableCycles.FirstOrDefault()?.id;
+    }
+  }
+
+  private async Task LoadOkrsAsync()
+  {
+    if (currentUser is not null && !string.IsNullOrEmpty(selectedCompanyId) && !string.IsNullOrEmpty(selectedCycleId))
+    {
+      okrs.Clear();
+      StateHasChanged();
+
+      okrs = await OkrRepo.GetList(selectedCompanyId, selectedCycleId, currentUser.id);
+      StateHasChanged();
+    }
   }
 
   private string FormatDate(long ticks)
@@ -111,7 +198,7 @@
     }
     catch
     {
-        return "";
+      return "";
     }
   }
 }

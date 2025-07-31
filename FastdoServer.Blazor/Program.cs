@@ -1,14 +1,17 @@
 ﻿using FastdoServer.Blazor.Components;
 using FastdoServer.Infrastructure.Data.Main;
 using FastdoServer.Infrastructure.Data.Okr;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddSingleton<MainUserRepo>();
-builder.Services.AddSingleton<OkrRepo>();
+builder.Services.AddScoped<MainUserRepo>();
+builder.Services.AddScoped<OkrRepo>();
+builder.Services.AddScoped<ProtectedSessionStorage>();
+builder.Services.AddScoped<OkrConfigRepo>();
 
 var app = builder.Build();
 
