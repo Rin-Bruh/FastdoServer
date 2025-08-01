@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 
 namespace FastdoServer.Infrastructure.Configurations
@@ -10,7 +10,7 @@ namespace FastdoServer.Infrastructure.Configurations
 	static MongoDBConfiguration()
 	{
 	  IConfiguration config = new ConfigurationBuilder()
-	    .AddJsonFile("appsettings.json")
+	  .AddJsonFile("appsettings.json")
 		.AddEnvironmentVariables()
 		.Build();
 

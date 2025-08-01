@@ -1,0 +1,163 @@
+﻿@using FastdoServer.Core.Entities
+@using FastdoServer.Infrastructure.Data.Okr
+@inject OkrRepo OkrRepo
+
+@if (Visible)
+{
+  <div class="slidebar-overlay" style="position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.1);z-index:1000;">
+    <div class="slidebar-content" style="position:absolute;top:0;right:0;width:600px;height:100%;background:#fff;box-shadow:-2px 0 8px #0002;padding:32px;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="font-weight:700;">@(IsUpdateMode ? "CẬP NHẬT OKR" : "TẠO OKRs MỚI")</h2>
+        <button class="btn btn-link" @onclick="OnClose">@(IsUpdateMode ? "Hủy cập nhật" : "Hủy tạo")</button>
+      </div>
+      <div class="mb-3" style="display:flex;gap:16px;">
+        <div style="flex:1;">
+          <label>Mục tiêu của bạn:</label>
+          <input class="form-control" @bind="okr.name" placeholder="Bắt buộc nhập..." />
+        </div>
+        <div>
+          <label>Loại:</label>
+          <select class="form-select" @bind="okr.type">
+            <option value="2">OKRs cam kết</option>
+            <option value="1">OKRs mở rộng</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-3" style="display:flex;gap:16px;">
+        <div style="flex:1;">
+          <label>OKRs cấp trên:</label>
+          <select class="form-select" @bind="okr.parent">
+            <option value="">- Không chọn -</option>
+            @foreach (var parentOkr in parentOkrs)
+            {
+              <option value="@parentOkr.id">@parentOkr.name</option>
+            }
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label>KR cấp trên:</label>
+          <select class="form-select" @bind="okr.parent_kr" disabled="@string.IsNullOrEmpty(okr.parent)">
+            <option value="">- Không chọn -</option>
+            @if (!string.IsNullOrEmpty(okr.parent))
+            {
+              var selectedParent = parentOkrs.FirstOrDefault(x => x.id == okr.parent);
+              if (selectedParent?.key_results != null)
+              {
+                foreach (var kr in selectedParent.key_results)
+                {
+                  <option value="@kr.id">@kr.name</option>
+                }
+              }
+            }
+          </select>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label>Cách tính:</label>
+        <select class="form-select" @bind="okr.type_target">
+          <option value="1">Định tính</option>
+          <option value="2">Định lượng</option>
+        </select>
+      </div>
+      <hr />
+      <h5>Kết quả then chốt</h5>
+      @foreach (var kr in keyResults)
+      {
+        <div class="kr-item" style="border-bottom:1px solid #eee;padding-bottom:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input class="form-control" style="flex:1;" @bind="kr.name" placeholder="Kết quả then chốt..." />
+            <button class="btn btn-danger btn-sm" @onclick="() => RemoveKeyResult(kr)">✖</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input class="form-control" style="width:120px;" type="number" @bind="kr.target" placeholder="Nhập số liệu mục tiêu" />
+            <input class="form-control" style="width:80px;" @bind="kr.unit" placeholder="Đơn vị" />
+            <input class="form-control" style="width:120px;" @bind="kr.link" placeholder="Kết quả (link)" />
+          </div>
+        </div>
+      }
+      <button class="btn btn-outline-secondary" @onclick="AddKeyResult">+ Thêm kết quả</button>
+      <hr />
+      <div style="display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn btn-primary" @onclick="SaveOkr" disabled="@(string.IsNullOrWhiteSpace(okr.name))">@(IsUpdateMode ? "Cập nhật OKR" : "Tạo OKRs")</button>
+      </div>
+    </div>
+  </div>
+}
+
+@code {
+  [Parameter] public bool Visible { get; set; }
+  [Parameter] public EventCallback OnClose { get; set; }
+  [Parameter] public EventCallback OnSaved { get; set; }
+  [Parameter] public OkrModel? OkrToEdit { get; set; }
+  [Parameter] public UserModel? CurrentUser { get; set; }
+  [Parameter] public string? CompanyId { get; set; }
+  [Parameter] public string? CycleId { get; set; }
+  private OkrModel okr = new();
+  private List<OkrModel.KeyResult> keyResults = new();
+  private List<OkrModel> parentOkrs = new();
+  private bool IsUpdateMode => OkrToEdit != null;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (Visible)
+    {
+      if (IsUpdateMode && OkrToEdit != null)
+      {
+        // Chế độ Cập nhật: Gán OKR cần sửa vào model của form
+        okr = OkrToEdit;
+        // Tạo một bản sao của danh sách KRs để việc thêm/xóa không ảnh hưởng đến list gốc cho đến khi lưu
+        keyResults = new List<OkrModel.KeyResult>(OkrToEdit.key_results ?? Enumerable.Empty<OkrModel.KeyResult>());
+      }
+      else
+      {
+        // Chế độ Tạo mới
+        okr = new OkrModel
+        {
+          type = 2,
+          type_target = 1,
+          cycle = CycleId ?? "",
+          user_create = CurrentUser?.id ?? "",
+          parent = "",
+        };
+        keyResults = new List<OkrModel.KeyResult>();
+      }
+
+      parentOkrs.Clear();
+      if (!string.IsNullOrEmpty(CompanyId) && !string.IsNullOrEmpty(CycleId) && CurrentUser != null)
+      {
+        parentOkrs = await OkrRepo.GetAll(CompanyId, CycleId);
+      }
+    }
+  }
+
+  private void AddKeyResult()
+  {
+    keyResults.Add(new OkrModel.KeyResult());
+  }
+
+  private void RemoveKeyResult(OkrModel.KeyResult kr)
+  {
+    keyResults.Remove(kr);
+  }
+
+  private async Task SaveOkr()
+  {
+    okr.key_results = keyResults;
+    if (!string.IsNullOrEmpty(CompanyId))
+    {
+      if (IsUpdateMode)
+      {
+        await OkrRepo.Update(CompanyId, okr);
+      }
+      else
+      {
+        await OkrRepo.Create(CompanyId, okr);
+      }
+
+      if (OnSaved.HasDelegate)
+      {
+          await OnSaved.InvokeAsync();
+      }
+    }
+  }
+}

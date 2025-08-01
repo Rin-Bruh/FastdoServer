@@ -1,6 +1,4 @@
 ﻿@page "/okrs"
-@using FastdoServer.Core.Entities
-@using FastdoServer.Infrastructure.Data.Okr
 @inject OkrRepo OkrRepo
 @inject OkrConfigRepo OkrConfigRepo
 @inject ProtectedSessionStorage SessionStorage
@@ -12,7 +10,7 @@
   <div style="display:flex;justify-content:space-between;align-items:center; flex-wrap: wrap; gap: 16px;">
     <h2 style="font-weight:600;color:#6c757d; margin-bottom: 0;">OKRS - CÁ NHÂN</h2>
     <div style="display:flex; align-items:center; gap: 16px; flex-wrap: wrap;">
-      @if (currentUser?.companys is not null && currentUser.companys.Any())
+      @if (currentUser?.companys != null && currentUser.companys.Any())
       {
         <select class="form-select" style="width: 200px;" @onchange="OnCompanyChanged">
           @foreach (var company in currentUser.companys)
@@ -30,8 +28,8 @@
           }
         }
       </select>
-      <button class="btn btn-outline-primary" style="padding:8px 20px;border-radius:8px;">
-          + Thêm OKRs
+      <button class="btn btn-outline-primary" style="padding:8px 20px;border-radius:8px;" @onclick="ShowCreateSlideBar">
+        + Thêm OKRs
       </button>
     </div>
   </div>
@@ -46,6 +44,7 @@
           <th style="min-width:100px;">Tiến độ</th>
           <th style="min-width:100px;">Thay đổi</th>
           <th style="min-width:120px;">Ngày tạo</th>
+          <th style="min-width:120px;">Tính năng</th>
         </tr>
       </thead>
       <tbody>
@@ -72,6 +71,14 @@
               <td></td>
               <td></td>
               <td>@FormatDate(okr.date_create)</td>
+              <td>
+                <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => ShowUpdateSlideBar(okr)">
+                  <span style="font-size:14px;">✏️</span> Sửa
+                </button>
+                <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteOkr(okr.id)">
+                  <span style="font-size:14px;">🗑️</span> Xóa
+                </button>
+              </td>
             </tr>
             @if (okr.key_results != null)
             {
@@ -94,6 +101,7 @@
                   <span>0%</span>
                 </td>
                 <td></td>
+                <td></td>
                 </tr>
               }
             }
@@ -103,7 +111,7 @@
         {
           <tr>
             <td colspan="6" class="text-center p-4">
-              @if(currentUser is null) {
+              @if(currentUser == null) {
                 <span>Đang tải dữ liệu...</span>
               } else {
                 <span>Không có OKRs nào.</span>
@@ -116,13 +124,41 @@
   </div>
 </div>
 
+<OkrSlideBar Visible="@showSlideBar"
+             OnClose="HideSlideBar"
+             OnSaved="OnOkrSaved"
+             CurrentUser="@currentUser"
+             CompanyId="@selectedCompanyId"
+             CycleId="@selectedCycleId"
+             OkrToEdit="@okrToEdit" />
+
 @code {
   private List<OkrModel> okrs = new();
   private UserModel? currentUser;
   private string? selectedCompanyId;
   private string? selectedCycleId;
+  private OkrModel? okrToEdit;
+  private bool showSlideBar = false;
+
+  private void ShowCreateSlideBar()
+  {
+    okrToEdit = null;
+    showSlideBar = true;
+  }
+
+  private void ShowUpdateSlideBar(OkrModel okr) {
+    okrToEdit = okr;
+    showSlideBar = true;
+  }
+
+  private void HideSlideBar() => showSlideBar = false;
 
   private List<OkrConfigModel.Cycle> availableCycles = new();
+
+  protected override void OnInitialized()
+  {
+    // Initialize any required services or state here
+    }
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
@@ -133,13 +169,14 @@
       {
         currentUser = userResult.Value;
 
-        selectedCompanyId = currentUser.companys?.FirstOrDefault()?.id;        
+        selectedCompanyId = currentUser.companys?.FirstOrDefault()?.id;   
+        
         if (!string.IsNullOrEmpty(selectedCompanyId))
         {
           await LoadCyclesAsync(selectedCompanyId);
           await LoadOkrsAsync();
         }
-        StateHasChanged();
+
       }
       else
       {
@@ -169,8 +206,10 @@
     }
 
     availableCycles.Clear();
+
     var config = await OkrConfigRepo.Get(companyId);
-    if (config?.cycles is not null)
+
+    if (config?.cycles != null)
     {      
       availableCycles = config.cycles;
       selectedCycleId = availableCycles.FirstOrDefault()?.id;
@@ -179,13 +218,12 @@
 
   private async Task LoadOkrsAsync()
   {
-    if (currentUser is not null && !string.IsNullOrEmpty(selectedCompanyId) && !string.IsNullOrEmpty(selectedCycleId))
+    if (currentUser != null && !string.IsNullOrEmpty(selectedCompanyId) && !string.IsNullOrEmpty(selectedCycleId))
     {
       okrs.Clear();
-      StateHasChanged();
 
       okrs = await OkrRepo.GetList(selectedCompanyId, selectedCycleId, currentUser.id);
-      StateHasChanged();
+
     }
   }
 
@@ -194,11 +232,31 @@
     try
     {
       var date = new DateTime(ticks);
+
       return date.ToString("dd/MM/yyyy");
     }
     catch
     {
       return "";
+    }
+  }
+
+  private async Task OnOkrSaved()
+  {
+    await LoadOkrsAsync();
+
+    showSlideBar = false;
+
+    StateHasChanged();
+  }
+
+  private async Task DeleteOkr(string okrId)
+  {
+    if (!string.IsNullOrEmpty(selectedCompanyId) && !string.IsNullOrEmpty(okrId))
+    {
+      await OkrRepo.Delete(selectedCompanyId, okrId);
+
+      await LoadOkrsAsync();
     }
   }
 }
